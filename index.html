@@ -770,10 +770,18 @@ function downloadApp() {
   installSection.innerHTML = `
     <div style="background:#111827;border:1px solid #2a3a5c;border-radius:16px;padding:32px;max-width:500px;margin:20px;animation:fadeUp 0.3s ease-out">
       <h3 style="font-size:20px;font-weight:700;margin-bottom:8px">📦 Quick Install</h3>
-      <p style="color:#94a3b8;font-size:14px;margin-bottom:20px">Run this in your terminal:</p>
-      <pre style="background:#070b15;padding:16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;overflow-x:auto;white-space:pre-wrap">curl -fsSL https://mcp-hub.dev/install.sh | bash</pre>
-      <p style="color:#64748b;font-size:12px;margin-top:12px">Or <a href="#" style="color:#06b6d4;text-decoration:none">download the ZIP</a> directly</p>
-      <p style="color:#64748b;font-size:12px;margin-top:8px">After install: <code style="background:#070b15;padding:2px 6px;border-radius:4px;font-size:11px">npx mcp-hub</code></p>
+      <p style="color:#94a3b8;font-size:14px;margin-bottom:20px">Clone and run in your terminal:</p>
+      <pre style="background:#070b15;padding:16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;overflow-x:auto;white-space:pre-wrap">git clone https://github.com/Moreee326/mcp-hub.git
+cd mcp-hub
+npm install
+node server.js</pre>
+      <p style="color:#64748b;font-size:12px;margin-top:12px">
+        Or <a href="https://github.com/Moreee326/mcp-hub/archive/refs/heads/master.zip" style="color:#06b6d4;text-decoration:none">download the ZIP</a> directly
+      </p>
+      <p style="color:#64748b;font-size:12px;margin-top:8px">
+        Requires <a href="https://nodejs.org" style="color:#06b6d4;text-decoration:none">Node.js 18+</a> · 
+        Then open <code style="background:#070b15;padding:2px 6px;border-radius:4px;font-size:11px">http://localhost:3456/app</code>
+      </p>
       <button onclick="this.closest('div[style]').parentElement.remove()" style="margin-top:20px;background:none;border:1px solid #2a3a5c;color:#e2e8f0;padding:8px 20px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px">Close</button>
     </div>
   `;

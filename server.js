@@ -391,6 +391,45 @@ app.get('/api/servers/:name/logs', (req, res) => {
   res.json({ stderr: servers[name].stderrbuf || '' });
 });
 
+// ── Feedback API ─────────────────────────────────────────────────────
+const FEEDBACK_PATH = path.join(__dirname, 'feedback.json');
+
+function loadFeedback() {
+  try {
+    if (fs.existsSync(FEEDBACK_PATH)) {
+      return JSON.parse(fs.readFileSync(FEEDBACK_PATH, 'utf8'));
+    }
+  } catch (e) { console.error('Feedback load error:', e.message); }
+  return [];
+}
+
+function saveFeedback(entry) {
+  const feedback = loadFeedback();
+  feedback.push(entry);
+  fs.writeFileSync(FEEDBACK_PATH, JSON.stringify(feedback, null, 2), 'utf8');
+}
+
+app.post('/api/feedback', (req, res) => {
+  const { type, message, email } = req.body;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+  const validTypes = ['bug', 'feature', 'suggestion', 'love'];
+  const feedbackType = validTypes.includes(type) ? type : 'suggestion';
+  
+  const entry = {
+    type: feedbackType,
+    message: message.trim(),
+    email: email ? email.trim() : null,
+    timestamp: new Date().toISOString(),
+    userAgent: req.get('user-agent') || null,
+  };
+  
+  saveFeedback(entry);
+  console.log(`[Feedback] ${feedbackType}: ${message.trim().substring(0, 80)}`);
+  res.json({ status: 'received', message: 'Thanks for your feedback! 🎉' });
+});
+
 // ── Startup ─────────────────────────────────────────────────────────
 async function startup() {
   const configs = loadConfig();

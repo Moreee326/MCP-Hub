@@ -185,6 +185,38 @@ header {
   .tools-grid { grid-template-columns:1fr; }
   .form-row { flex-direction:column; gap:0; }
 }
+
+/* Feedback widget */
+.feedback-btn {
+  position:fixed; bottom:20px; right:20px; z-index:150;
+  background:linear-gradient(135deg,var(--accent),#7c3aed);
+  color:white; border:none; border-radius:99px;
+  padding:10px 18px; font-size:13px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+  box-shadow:0 4px 20px rgba(139,92,246,0.35);
+  transition:all 0.2s; font-family:inherit;
+}
+.feedback-btn:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 28px rgba(139,92,246,0.45);
+}
+.feedback-type-selector { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.feedback-type-btn {
+  background:var(--bg-surface); border:1px solid var(--border);
+  border-radius:99px; padding:6px 14px; font-size:12px; font-weight:600;
+  color:var(--text-muted); cursor:pointer; transition:all 0.15s;
+  font-family:inherit; display:flex; align-items:center; gap:4px;
+}
+.feedback-type-btn:hover { border-color:var(--accent); color:var(--text); }
+.feedback-type-btn.selected { border-color:var(--accent); background:var(--accent-glow); color:var(--accent); }
+.feedback-type-btn.selected.bug { border-color:var(--red); background:rgba(239,68,68,0.12); color:var(--red); }
+.feedback-type-btn.selected.love { border-color:#f472b6; background:rgba(244,114,182,0.12); color:#f472b6; }
+#feedbackMsg { 
+  width:100%; background:#0d1320; border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 12px; color:var(--text);
+  font-size:13px; font-family:inherit; resize:vertical; min-height:80px;
+}
+#feedbackMsg:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
 </style>
 </head>
 <body>
@@ -321,6 +353,41 @@ header {
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('toolModal')">Close</button>
       <button class="btn btn-primary" id="btnCallTool" onclick="callTool()">▶ Run</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback floating button -->
+<button class="feedback-btn" onclick="openFeedback()" title="Send feedback">
+  💬 Feedback
+</button>
+
+<!-- Feedback Modal -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal" style="max-width:440px">
+    <h2>💬 Share Your Feedback</h2>
+    <p class="sub">Help us make MCP Hub better — bug reports, feature ideas, or just say hi.</p>
+    
+    <div class="feedback-type-selector">
+      <button class="feedback-type-btn" data-type="suggestion" onclick="selectFeedbackType(this,'suggestion')">💡 Suggestion</button>
+      <button class="feedback-type-btn" data-type="bug" onclick="selectFeedbackType(this,'bug')">🐛 Bug</button>
+      <button class="feedback-type-btn" data-type="feature" onclick="selectFeedbackType(this,'feature')">🚀 Feature</button>
+      <button class="feedback-type-btn" data-type="love" onclick="selectFeedbackType(this,'love')">❤️ Love</button>
+    </div>
+    
+    <div class="form-group">
+      <label>Your message</label>
+      <textarea id="feedbackMsg" placeholder="Tell us what's on your mind..."></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label>Email (optional — if you'd like a reply)</label>
+      <input id="feedbackEmail" placeholder="you@example.com">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('feedbackModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitFeedback()">Send Feedback</button>
     </div>
   </div>
 </div>
@@ -616,6 +683,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.getElementById('addModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('addModal');});
 document.getElementById('licenseModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('licenseModal');});
 document.getElementById('toolModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('toolModal');});
+document.getElementById('feedbackModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('feedbackModal');});
 
 // ── Tool Calling ─────────────────────────────────────────────
 function openToolCall(name){
@@ -659,6 +727,54 @@ async function callTool(){
     document.getElementById('toolResultContent').style.color='var(--red)';
   }
   btn.disabled=false;btn.textContent='▶ Run';
+}
+
+// ── Feedback ─────────────────────────────────────────────────
+let feedbackType = 'suggestion';
+
+function openFeedback() {
+  document.getElementById('feedbackModal').classList.add('open');
+  document.getElementById('feedbackMsg').value = '';
+  document.getElementById('feedbackEmail').value = '';
+  feedbackType = 'suggestion';
+  // Highlight the suggestion button by default
+  document.querySelectorAll('.feedback-type-btn').forEach(b => {
+    b.className = 'feedback-type-btn' + (b.dataset.type === feedbackType ? ' selected' : '');
+  });
+}
+
+function selectFeedbackType(btn, type) {
+  feedbackType = type;
+  document.querySelectorAll('.feedback-type-btn').forEach(b => {
+    const cls = 'feedback-type-btn';
+    b.className = b.dataset.type === type
+      ? cls + ' selected ' + (type === 'bug' ? 'bug' : type === 'love' ? 'love' : '')
+      : cls;
+  });
+}
+
+async function submitFeedback() {
+  const msg = document.getElementById('feedbackMsg').value.trim();
+  if (!msg) { toast('Please write a message', 'error'); return; }
+  
+  const email = document.getElementById('feedbackEmail').value.trim();
+  const btn = document.querySelector('#feedbackModal .btn-primary');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  
+  try {
+    const res = await fetch(API + '/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: feedbackType, message: msg, email: email || undefined }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error, 'error'); return; }
+    toast(data.message || 'Thanks for your feedback!', 'success');
+    closeModal('feedbackModal');
+  } catch (e) {
+    toast('Error: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Send Feedback';
 }
 
 init();
