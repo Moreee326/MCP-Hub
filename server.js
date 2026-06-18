@@ -466,51 +466,6 @@ app.post('/api/feedback', (req, res) => {
   res.json({ status: 'received', message: 'Thanks for your feedback! 🎉' });
 });
 
-// ── Gumroad Webhook (License Key Delivery) ──────────────────────────
-const GUMROAD_SECRET = process.env.GUMROAD_SECRET || '';
-
-// Validate Gumroad signature
-function verifyGumroad(req) {
-  if (!GUMROAD_SECRET) return true; // no secret = skip validation (dev mode)
-  const sig = req.get('x-gumroad-signature');
-  if (!sig) return false;
-  // Gumroad signs with HMAC-SHA256 of the raw body
-  const body = JSON.stringify(req.body);
-  const expected = crypto.createHmac('sha256', GUMROAD_SECRET).update(body).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
-}
-
-// Ping URL: Gumroad sends POST on sale
-app.post('/api/gumroad-webhook', (req, res) => {
-  if (!verifyGumroad(req)) {
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
-
-  const { sale_id, purchaser_email, product_name, product_permalink, variants } = req.body;
-  
-  console.log(`[Gumroad Sale] ${sale_id} — ${purchaser_email} — ${product_name}`);
-  
-  // Generate HMAC license key
-  const payload = crypto.randomBytes(8).toString('hex');
-  const sig = crypto.createHmac('sha256', 'mcp-hub-secret-key-change-in-production-v1')
-    .update(payload).digest('hex').substring(0, 8);
-  const licenseKey = `MCPHUB-PRO-${payload}-${sig}`;
-
-  // Save sale record
-  const salesLog = path.join(__dirname, 'sales.json');
-  try {
-    const sales = fs.existsSync(salesLog) ? JSON.parse(fs.readFileSync(salesLog, 'utf8')) : [];
-    sales.push({ sale_id, email: purchaser_email, product: product_name, licenseKey, variant: variants || null, timestamp: new Date().toISOString() });
-    fs.writeFileSync(salesLog, JSON.stringify(sales, null, 2), 'utf8');
-  } catch (e) { console.error('Sales log error:', e.message); }
-
-  // Gumroad will include this in the customer's receipt
-  res.json({
-    license_key: licenseKey,
-    message: 'Your MCP Hub Pro license key is above. Enter it in the dashboard to unlock unlimited servers.',
-  });
-});
-
 // ── Startup ─────────────────────────────────────────────────────────
 async function startup() {
   const configs = loadConfig();
