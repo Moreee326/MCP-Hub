@@ -48,9 +48,9 @@ npx mcp-hub
 
 ### How to buy Pro
 
-1. Purchase a license key on [Gumroad](https://gumroad.com/l/mcp-hub-pro) ($19)
-2. Open MCP Hub Dashboard → click the **FREE** badge → **Activate**
-3. Enter your license key → **Pro unlocked**
+1. Purchase a license key on [Gumroad](https://1463982783049.gumroad.com/l/tgpbvk) ($19)
+2. After purchase, you'll receive a license key via email
+3. Open MCP Hub Dashboard → click the **FREE** badge → **Activate**
 
 ## Requirements
 
