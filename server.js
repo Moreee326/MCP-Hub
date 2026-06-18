@@ -234,6 +234,38 @@ function removeServer(name) {
 }
 
 // ── License API ─────────────────────────────────────────────────────
+const https = require('https');
+const GUMROAD_PERMALINK = process.env.GUMROAD_PERMALINK || 'mcp-hub';
+
+// Validate key: try Gumroad API first, fall back to HMAC
+async function validateLicenseKeyWithGumroad(key) {
+  // Try HMAC first (offline, fast)
+  if (validateLicenseKey(key)) return { valid: true, source: 'hmac' };
+  
+  // Try Gumroad verify API
+  try {
+    const body = `product_permalink=${encodeURIComponent(GUMROAD_PERMALINK)}&license_key=${encodeURIComponent(key)}`;
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'api.gumroad.com', path: '/v2/licenses/verify',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) },
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); } catch(e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.write(body);
+      req.end();
+    });
+    if (result.success) return { valid: true, source: 'gumroad', email: result.purchaser?.email };
+  } catch (e) { /* Gumroad API unreachable, fall through */ }
+  
+  return { valid: false };
+}
 
 // Get current license status
 app.get('/api/license', (req, res) => {
@@ -247,14 +279,18 @@ app.post('/api/license/generate', (req, res) => {
 });
 
 // Activate a license key
-app.post('/api/license/activate', (req, res) => {
+app.post('/api/license/activate', async (req, res) => {
   const { key } = req.body;
   if (!key) return res.status(400).json({ error: 'License key required' });
-  if (!validateLicenseKey(key)) {
+  
+  const result = await validateLicenseKeyWithGumroad(key).catch(() => ({ valid: false }));
+  if (!result.valid) {
     return res.status(400).json({ error: 'Invalid license key' });
   }
+  
   saveLicense(key);
-  res.json({ tier: 'pro', message: 'Pro activated!' });
+  const source = result.source === 'gumroad' ? ' (verified via Gumroad)' : '';
+  res.json({ tier: 'pro', message: `Pro activated!${source}` });
 });
 
 // ── REST API ────────────────────────────────────────────────────────
