@@ -2,5 +2,6 @@ node_modules/
 servers.json
 .mcp-hub-license
 feedback.json
+sales.json
 *.log
 .env
