@@ -2,3 +2,4 @@ node_modules/
 servers.json
 .mcp-hub-license
 *.log
+.env
