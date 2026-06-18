@@ -10,7 +10,7 @@ A visual dashboard to add, connect, and call MCP (Model Context Protocol) server
 
 ```bash
 # 1. Download or clone
-git clone https://github.com/Moreee326/mcp-hub.git
+git clone https://github.com/Moreee326/MCP-Hub.git
 cd mcp-hub
 
 # 2. Install dependencies
