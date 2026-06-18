@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e17"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(139,92,246,0.15)"/>
+      <stop offset="100%" style="stop-color:rgba(6,182,212,0.05)"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="96" fill="url(#glow)"/>
+  
+  <!-- Outer decorative ring -->
+  <circle cx="256" cy="240" r="140" fill="none" stroke="rgba(139,92,246,0.08)" stroke-width="2"/>
+  
+  <!-- Server rack frame -->
+  <rect x="136" y="160" width="240" height="160" rx="20" fill="#111827" stroke="url(#accent)" stroke-width="2.5"/>
+  
+  <!-- Server line 1 - connected -->
+  <rect x="164" y="180" width="184" height="32" rx="8" fill="#1a2332"/>
+  <circle cx="184" cy="196" r="6" fill="#22c55e"/>
+  <rect x="202" y="190" width="60" height="12" rx="3" fill="#2a3a5c"/>
+  <rect x="276" y="190" width="40" height="12" rx="3" fill="rgba(6,182,212,0.15)"/>
+  <text x="296" y="199" font-family="monospace" font-size="10" fill="#06b6d4" text-anchor="middle" font-weight="700">1</text>
+  
+  <!-- Server line 2 - connected -->
+  <rect x="164" y="220" width="184" height="32" rx="8" fill="#1a2332"/>
+  <circle cx="184" cy="236" r="6" fill="#22c55e"/>
+  <rect x="202" y="230" width="60" height="12" rx="3" fill="#2a3a5c"/>
+  <rect x="276" y="230" width="40" height="12" rx="3" fill="rgba(6,182,212,0.15)"/>
+  <text x="296" y="239" font-family="monospace" font-size="10" fill="#06b6d4" text-anchor="middle" font-weight="700">3</text>
+  
+  <!-- Server line 3 - disconnected -->
+  <rect x="164" y="260" width="184" height="32" rx="8" fill="#1a2332"/>
+  <circle cx="184" cy="276" r="6" fill="#64748b"/>
+  <rect x="202" y="270" width="60" height="12" rx="3" fill="#2a3a5c"/>
+  
+  <!-- Glowing add button -->
+  <rect x="284" y="324" width="56" height="24" rx="12" fill="url(#accent)" opacity="0.9"/>
+  <text x="312" y="340" font-family="sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="700">+</text>
+  
+  <!-- Brand text -->
+  <text x="256" y="400" font-family="'Inter','SF Pro',-apple-system,sans-serif" font-size="32" font-weight="800" fill="#f1f5f9" text-anchor="middle" letter-spacing="-0.5">MCP Hub</text>
+  <text x="256" y="430" font-family="'SF Mono','JetBrains Mono',monospace" font-size="13" fill="#64748b" text-anchor="middle" letter-spacing="1">CONTROL PANEL</text>
+</svg>

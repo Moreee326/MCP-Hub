@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MCP Hub — Dashboard</title>
+<style>
+/* ═══════════════════════════════════════════
+   MCP Hub — Dashboard (same dark theme)
+   ═══════════════════════════════════════════ */
+:root {
+  --bg: #0a0e17; --bg-card: #111827; --bg-card-hover: #1a2332;
+  --bg-surface: #1e293b; --border: #2a3a5c; --text: #e2e8f0;
+  --text-muted: #94a3b8; --text-dim: #64748b;
+  --accent: #8b5cf6; --accent-glow: rgba(139,92,246,0.15);
+  --accent2: #06b6d4; --green: #22c55e; --yellow: #eab308;
+  --red: #ef4444; --radius: 12px; --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+  line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+
+/* Header */
+header {
+  background: linear-gradient(135deg,#0f172a,#1a1040);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100; backdrop-filter:blur(12px);
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:32px; height:32px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:14px; color:white;
+}
+.logo h1 { font-size:18px; font-weight:700; color:var(--text); }
+.license-badge {
+  font-size:11px; padding:3px 10px; border-radius:99px; font-weight:600;
+}
+.license-badge.free { background:rgba(100,116,139,0.15); color:var(--text-dim); }
+.license-badge.pro { background:rgba(139,92,246,0.15); color:var(--accent); }
+
+/* Layout */
+.layout { display:flex; height:calc(100vh - 61px); }
+
+/* Sidebar */
+.sidebar {
+  width:280px; min-width:280px; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; background:#0c1120;
+}
+.sidebar-header {
+  padding:14px 16px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.sidebar-header h2 { font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; }
+.server-count { background:var(--bg-surface); color:var(--text-dim); font-size:11px; padding:2px 8px; border-radius:99px; }
+.server-list { flex:1; overflow-y:auto; padding:6px; }
+.server-item {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border-radius:var(--radius-sm); cursor:pointer; transition:all 0.15s;
+  border:1px solid transparent; margin-bottom:2px;
+}
+.server-item:hover { background:var(--bg-card-hover); }
+.server-item.active { background:var(--accent-glow); border-color:var(--accent); }
+.status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.status-dot.connected { background:var(--green); box-shadow:0 0 6px rgba(34,197,94,0.4); }
+.status-dot.connecting { background:var(--yellow); animation:pulse 1s infinite; }
+.status-dot.error { background:var(--red); box-shadow:0 0 6px rgba(239,68,68,0.4); }
+.status-dot.disconnected,.status-dot.stopped { background:var(--text-dim); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.server-item-info { flex:1; min-width:0; }
+.server-item-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.server-item-meta { font-size:11px; color:var(--text-dim); margin-top:1px; }
+.server-item-tools { font-size:10px; color:var(--accent2); background:rgba(6,182,212,0.1); padding:1px 6px; border-radius:99px; }
+
+/* Main */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.empty-state {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:12px; color:var(--text-dim); padding:40px;
+}
+.empty-state .icon { font-size:48px; opacity:0.3; }
+.empty-state h3 { font-size:16px; color:var(--text-muted); }
+.empty-state p { font-size:13px; text-align:center; max-width:380px; }
+.empty-state .btn { margin-top:8px; }
+
+/* Server Detail */
+.server-detail { flex:1; overflow-y:auto; padding:20px; display:none; }
+.server-detail.visible { display:block; }
+.detail-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+.detail-name { font-size:20px; font-weight:700; }
+.detail-status { font-size:11px; padding:3px 10px; border-radius:99px; font-weight:600; text-transform:capitalize; }
+.detail-status.connected { background:rgba(34,197,94,0.15); color:var(--green); }
+.detail-status.connecting { background:rgba(234,179,8,0.15); color:var(--yellow); }
+.detail-status.error { background:rgba(239,68,68,0.15); color:var(--red); }
+.detail-status.disconnected,.detail-status.stopped { background:rgba(100,116,139,0.15); color:var(--text-dim); }
+.detail-actions { margin-left:auto; display:flex; gap:6px; }
+
+/* Config */
+.config-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
+.config-section h3 { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
+.config-row { display:flex; gap:6px; margin-bottom:4px; font-size:12px; }
+.config-row .label { color:var(--text-dim); min-width:70px; flex-shrink:0; }
+.config-row .value { color:var(--text); font-family:'SF Mono','Fira Code','Consolas',monospace; font-size:11px; word-break:break-all; background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:3px; }
+
+/* Tools */
+.tools-section { margin-bottom:16px; }
+.tools-section h3 { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
+.tools-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:6px; }
+.tool-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; transition:all 0.15s; cursor:pointer; }
+.tool-card:hover { border-color:var(--accent); background:var(--bg-card-hover); }
+.tool-card-name { font-size:13px; font-weight:600; color:var(--accent2); font-family:'SF Mono','Fira Code','Consolas',monospace; margin-bottom:4px; }
+.tool-card-desc { font-size:11px; color:var(--text-dim); line-height:1.5; }
+.tool-card-params { margin-top:6px; font-size:10px; color:var(--text-muted); }
+.tool-card-params code { background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:2px; font-size:10px; color:var(--text-dim); }
+
+/* Buttons */
+.btn {
+  padding:7px 16px; border:none; border-radius:var(--radius-sm); font-size:13px;
+  font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex;
+  align-items:center; gap:4px; font-family:inherit;
+}
+.btn-primary { background:linear-gradient(135deg,var(--accent),#7c3aed); color:white; }
+.btn-primary:hover { box-shadow:0 0 16px var(--accent-glow); }
+.btn-secondary { background:var(--bg-surface); color:var(--text); border:1px solid var(--border); }
+.btn-secondary:hover { background:var(--bg-card-hover); }
+.btn-danger { background:rgba(239,68,68,0.15); color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background:rgba(239,68,68,0.25); }
+.btn-sm { padding:4px 10px; font-size:11px; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* Modal */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+  z-index:200; display:none; align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+  width:90%; max-width:480px; max-height:80vh; overflow-y:auto; padding:24px;
+  animation:modalIn 0.2s ease-out;
+}
+@keyframes modalIn { from{transform:translateY(16px) scale(0.96);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+.modal h2 { font-size:18px; font-weight:700; margin-bottom:4px; }
+.modal p.sub { color:var(--text-dim); font-size:12px; margin-bottom:20px; }
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px; }
+.form-group input { width:100%; background:#0d1320; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; color:var(--text); font-size:13px; font-family:inherit; }
+.form-group input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+.form-row { display:flex; gap:10px; }
+.form-row .form-group { flex:1; }
+.modal-actions { display:flex; gap:6px; justify-content:flex-end; margin-top:20px; padding-top:12px; border-top:1px solid var(--border); }
+.env-pair { display:flex; gap:6px; margin-bottom:4px; align-items:center; }
+.env-pair input { flex:1; }
+.env-pair button { background:none; border:none; color:var(--red); cursor:pointer; font-size:16px; padding:2px; }
+
+/* Toast */
+.toast-container { position:fixed; bottom:20px; right:20px; z-index:300; display:flex; flex-direction:column; gap:6px; }
+.toast { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; font-size:12px; animation:toastIn 0.3s ease-out; max-width:320px; box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.toast.success { border-left:3px solid var(--green); }
+.toast.error { border-left:3px solid var(--red); }
+.toast.info { border-left:3px solid var(--accent); }
+@keyframes toastIn { from{transform:translateX(30px);opacity:0} to{transform:translateX(0);opacity:1} }
+.tool-call-result { background:#0d1320; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; margin-top:10px; font-family:monospace; font-size:11px; white-space:pre-wrap; max-height:250px; overflow-y:auto; }
+
+/* License upgrade banner */
+.upgrade-banner {
+  background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(6,182,212,0.08));
+  border:1px solid rgba(139,92,246,0.2);
+  border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:12px;
+  display:none; align-items:center; gap:10px;
+  font-size:12px; color:var(--text-muted);
+}
+.upgrade-banner .btn { flex-shrink:0; }
+
+@media(max-width:768px) {
+  .sidebar { width:100%; min-width:auto; max-height:35vh; }
+  .layout { flex-direction:column; }
+  .tools-grid { grid-template-columns:1fr; }
+  .form-row { flex-direction:column; gap:0; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">MCP</div>
+    <h1>MCP Hub</h1>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span id="connectionDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.4)"></span>
+    <span class="license-badge free" id="licenseBadge">FREE</span>
+    <button class="btn btn-secondary btn-sm" onclick="location.reload()">↻</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Servers</h2>
+      <span class="server-count" id="serverCount">0</span>
+    </div>
+    <div class="server-list" id="serverList"></div>
+    <div style="padding:8px;border-top:1px solid var(--border)">
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAddModal()">+ Add Server</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🔌</div>
+      <h3>No MCP Servers Yet</h3>
+      <p>Add your first MCP server to get started, or use a preset below.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+        <button class="btn btn-secondary btn-sm" onclick="presetAndOpen('time','uvx','mcp-server-time')">⏰ Time</button>
+        <button class="btn btn-secondary btn-sm" onclick="presetAndOpen('fetch','uvx','mcp-server-fetch')">🌐 Fetch</button>
+        <button class="btn btn-secondary btn-sm" onclick="presetAndOpen('filesystem','npx','-y @modelcontextprotocol/server-filesystem .')">📁 Filesystem</button>
+      </div>
+    </div>
+
+    <div class="server-detail" id="serverDetail">
+      <div class="upgrade-banner" id="upgradeBanner">
+        <span>⚠️ Free plan: 2 server limit. Get Pro for $19 (one-time, lifetime license).</span>
+        <button class="btn btn-primary btn-sm" onclick="showLicenseModal()">Upgrade →</button>
+      </div>
+      <div class="detail-header">
+        <span class="status-dot" id="detailDot"></span>
+        <span class="detail-name" id="detailName">-</span>
+        <span class="detail-status" id="detailStatus">-</span>
+        <div class="detail-actions">
+          <button class="btn btn-primary btn-sm" id="btnConnect" onclick="toggleConnect()">▶</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteServer()">✕</button>
+        </div>
+      </div>
+      <div class="config-section">
+        <h3>Configuration</h3>
+        <div class="config-row"><span class="label">Command</span><span class="value" id="detailCommand">-</span></div>
+        <div class="config-row"><span class="label">Args</span><span class="value" id="detailArgs">-</span></div>
+        <div class="config-row" id="envRow" style="display:none"><span class="label">Env</span><span class="value" id="detailEnv" style="white-space:pre-wrap">-</span></div>
+        <div class="config-row"><span class="label">Status</span><span class="value" id="detailFullStatus">-</span></div>
+      </div>
+      <div class="tools-section">
+        <h3>Tools <span id="toolsCount" style="font-weight:400;color:var(--text-dim)">(0)</span></h3>
+        <div class="tools-grid" id="toolsGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>Add MCP Server</h2>
+    <p class="sub">Configure a stdio-based MCP server connection.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px">
+      <button class="btn btn-secondary btn-sm" onclick="preset('time','uvx','mcp-server-time')">⏰ Time</button>
+      <button class="btn btn-secondary btn-sm" onclick="preset('fetch','uvx','mcp-server-fetch')">🌐 Fetch</button>
+      <button class="btn btn-secondary btn-sm" onclick="preset('filesystem','npx','-y @modelcontextprotocol/server-filesystem .')">📁 Filesystem</button>
+    </div>
+    <div class="form-group"><label>Server Name</label><input id="inpName" placeholder="my-server"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Command</label><input id="inpCommand" placeholder="npx, uvx, python..."></div>
+      <div class="form-group"><label>Args</label><input id="inpArgs" placeholder="space-separated args"></div>
+    </div>
+    <div class="form-group">
+      <label>Environment Variables</label>
+      <div id="envPairs"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addEnvPair()" style="margin-top:4px">+ Add Env Var</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitServer()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- License Modal -->
+<div class="modal-overlay" id="licenseModal">
+  <div class="modal">
+    <h2>🔑 Activate Pro</h2>
+    <p class="sub">Enter your license key to unlock unlimited MCP servers and Pro features.</p>
+    <div class="form-group">
+      <label>License Key</label>
+      <input id="inpLicense" placeholder="MCPHUB-PRO-XXXX-XXXX" style="font-family:monospace;text-transform:uppercase">
+    </div>
+    <div style="background:#0d1320;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">💡 Don't have a key?</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
+        Get Pro for a <strong>one-time payment of $19</strong>.<br>
+        Unlimited servers, encrypted env vars, priority support,<br>
+        12 months of updates.
+      </div>
+      <a href="https://gumroad.com/l/mcp-hub-pro" class="btn btn-primary btn-sm" style="display:inline-flex;margin-top:10px">Purchase →</a>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('licenseModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="activateLicense()">Activate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tool Call Modal -->
+<div class="modal-overlay" id="toolModal">
+  <div class="modal" style="max-width:600px">
+    <h2 id="toolModalTitle">Call Tool</h2>
+    <p class="sub" id="toolModalDesc">-</p>
+    <div class="form-group">
+      <label>Arguments (JSON)</label>
+      <textarea id="toolArgs" rows="4" spellcheck="false" style="width:100%;background:#0d1320;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:12px;font-family:monospace;resize:vertical">{"url":"https://example.com","max_length":500}</textarea>
+    </div>
+    <div id="toolResult" style="display:none">
+      <div class="form-group"><label>Result</label><div class="tool-call-result" id="toolResultContent"></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('toolModal')">Close</button>
+      <button class="btn btn-primary" id="btnCallTool" onclick="callTool()">▶ Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const API = '';
+let currentServer = null;
+let selectedTool = null;
+let envPairs = [];
+let licenseInfo = { tier: 'free', key: null };
+
+// ── Init ──────────────────────────────────────────────────────
+let refreshCount = 0;
+let serverOnline = true;
+
+async function init() {
+  await loadLicense();
+  await loadServers();
+  setInterval(async () => {
+    refreshCount++;
+    const ok = await loadServersSilent();
+    if (!ok && serverOnline) {
+      serverOnline = false;
+      document.getElementById('connectionDot').style.background = 'var(--red)';
+      document.getElementById('connectionDot').style.boxShadow = '0 0 6px rgba(239,68,68,0.4)';
+      toast('⚠️ Server connection lost — retrying...', 'info');
+    } else if (ok && !serverOnline) {
+      serverOnline = true;
+      document.getElementById('connectionDot').style.background = 'var(--green)';
+      document.getElementById('connectionDot').style.boxShadow = '0 0 6px rgba(34,197,94,0.4)';
+      toast('✅ Reconnected', 'success');
+    }
+  }, 5000);
+}
+
+// Silent version for auto-refresh — returns true if successful
+async function loadServersSilent() {
+  try {
+    const list = await api('/api/servers');
+    renderSidebar(list);
+    document.getElementById('serverCount').textContent = list.length;
+    document.getElementById('emptyState').style.display = list.length===0 ? 'flex' : 'none';
+    const banner = document.getElementById('upgradeBanner');
+    if (licenseInfo.tier !== 'pro' && list.length >= 2) {
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+    if (currentServer) {
+      const up = list.find(s=>s.name===currentServer.name);
+      if (up) renderDetail(up);
+      else { currentServer=null; document.getElementById('serverDetail').classList.remove('visible'); }
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── License ───────────────────────────────────────────────────
+async function loadLicense() {
+  try {
+    const res = await fetch(API + '/api/license');
+    const data = await res.json();
+    licenseInfo = data;
+    const badge = document.getElementById('licenseBadge');
+    badge.textContent = data.tier === 'pro' ? 'PRO' : 'FREE';
+    badge.className = 'license-badge ' + (data.tier === 'pro' ? 'pro' : 'free');
+  } catch(e) {}
+}
+
+async function activateLicense() {
+  const key = document.getElementById('inpLicense').value.trim();
+  if (!key) { toast('Enter a license key', 'error'); return; }
+  
+  try {
+    const res = await fetch(API + '/api/license/activate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ key }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error, 'error'); return; }
+    toast('Pro activated! 🎉', 'success');
+    closeModal('licenseModal');
+    await loadLicense();
+    await loadServers();
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+function showLicenseModal() {
+  document.getElementById('licenseModal').classList.add('open');
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const res = await fetch(API+path, {headers:{'Content-Type':'application/json'},...opts});
+  const d = await res.json();
+  if (!res.ok) throw new Error(d.error||`HTTP ${res.status}`);
+  return d;
+}
+
+function toast(msg, type='info') {
+  const c=document.getElementById('toastContainer');
+  const e=document.createElement('div');
+  e.className='toast '+type; e.textContent=msg;
+  c.appendChild(e);
+  setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity 0.3s';setTimeout(()=>e.remove(),300)},3500);
+}
+
+// ── Servers ───────────────────────────────────────────────────
+async function loadServers() {
+  try {
+    const list = await api('/api/servers');
+    renderSidebar(list);
+    document.getElementById('serverCount').textContent = list.length;
+    document.getElementById('emptyState').style.display = list.length===0 ? 'flex' : 'none';
+    
+    // Check if need upgrade banner
+    const banner = document.getElementById('upgradeBanner');
+    if (licenseInfo.tier !== 'pro' && list.length >= 2) {
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+    
+    if (currentServer) {
+      const up = list.find(s=>s.name===currentServer.name);
+      if (up) renderDetail(up);
+      else { currentServer=null; document.getElementById('serverDetail').classList.remove('visible'); }
+    }
+  } catch(e) { /* silent fail on auto-refresh */ }
+}
+
+function renderSidebar(servers) {
+  const list=document.getElementById('serverList');
+  if(!servers.length){
+    list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">No servers</div>';
+    return;
+  }
+  list.innerHTML=servers.map(s=>{
+    const active=currentServer&&currentServer.name===s.name?'active':'';
+    const cls=s.status==='connected'?'connected':s.status==='connecting'?'connecting':s.status==='error'?'error':'disconnected';
+    return `<div class="server-item ${active}" onclick="selectServer('${s.name}')">
+      <span class="status-dot ${cls}"></span>
+      <div class="server-item-info">
+        <div class="server-item-name">${s.name}</div>
+        <div class="server-item-meta">${s.status}</div>
+      </div>
+      ${s.toolsCount>0?`<span class="server-item-tools">${s.toolsCount}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function selectServer(name) {
+  try {
+    const d=await api(`/api/servers/${encodeURIComponent(name)}`);
+    currentServer=d;
+    renderDetail(d);
+    renderSidebar(await api('/api/servers'));
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function renderDetail(s) {
+  const det=document.getElementById('serverDetail');
+  det.classList.add('visible');
+  document.getElementById('emptyState').style.display='none';
+  
+  document.getElementById('detailName').textContent=s.name;
+  const se=document.getElementById('detailStatus');
+  se.textContent=s.status; se.className='detail-status '+s.status;
+  
+  const dot=document.getElementById('detailDot');
+  dot.className='status-dot '+(s.status==='connected'?'connected':s.status==='connecting'?'connecting':s.status==='error'?'error':'disconnected');
+  
+  const btn=document.getElementById('btnConnect');
+  if(s.status==='connected'){btn.textContent='⏹';btn.className='btn btn-secondary btn-sm';btn.disabled=false;}
+  else if(s.status==='connecting'){btn.innerHTML='<span class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite"></span>';btn.className='btn btn-secondary btn-sm';btn.disabled=true;}
+  else{btn.textContent='▶';btn.className='btn btn-primary btn-sm';btn.disabled=false;}
+  
+  document.getElementById('detailCommand').textContent=s.config.command||'-';
+  document.getElementById('detailArgs').textContent=(s.config.args||[]).join(' ')||'(none)';
+  document.getElementById('detailFullStatus').textContent=s.status+(s.lastError?' — error: '+s.lastError.substring(0,60):'');
+  
+  const envRow=document.getElementById('envRow');
+  if(s.config.env&&Object.keys(s.config.env).length>0){
+    envRow.style.display='flex';
+    document.getElementById('detailEnv').textContent=Object.entries(s.config.env).map(([k,v])=>`${k}=${v.length>20?v.substring(0,20)+'...':v}`).join('\n');
+  }else envRow.style.display='none';
+  
+  // Error
+  const existingErr=document.querySelector('.error-section');
+  if(s.lastError){
+    if(!existingErr){
+      const es=document.createElement('div');es.className='config-section error-section';
+      es.style.borderColor='rgba(239,68,68,0.3)';
+      es.innerHTML=`<h3 style="color:var(--red)">❌ Error</h3><div style="font-size:11px;color:var(--red);font-family:monospace">${escapeHtml(s.lastError)}</div>`;
+      document.querySelector('.config-section').after(es);
+    }
+  }else if(existingErr) existingErr.remove();
+  
+  // Tools
+  document.getElementById('toolsCount').textContent=`(${s.tools.length})`;
+  const tg=document.getElementById('toolsGrid');
+  if(!s.tools.length){
+    tg.innerHTML=`<div style="color:var(--text-dim);font-size:12px;padding:4px 0">${s.status==='connected'?'No tools available.':'Connect to discover tools.'}</div>`;
+    return;
+  }
+  
+  tg.innerHTML=s.tools.map(t=>{
+    const props=t.inputSchema&&t.inputSchema.properties?Object.keys(t.inputSchema.properties):[];
+    return `<div class="tool-card" onclick="openToolCall('${t.name}')">
+      <div class="tool-card-name">${t.name}</div>
+      <div class="tool-card-desc">${t.description||'No description'}</div>
+      ${props.length?`<div class="tool-card-params">args: ${props.map(p=>`<code>${p}</code>`).join(' ')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ── Actions ──────────────────────────────────────────────────
+async function toggleConnect(){
+  if(!currentServer)return;
+  const name=currentServer.name;
+  try{
+    if(currentServer.status==='connected'){
+      await api(`/api/servers/${encodeURIComponent(name)}/disconnect`,{method:'POST'});
+      toast(`Disconnected`,'info');
+    }else{
+      await api(`/api/servers/${encodeURIComponent(name)}/connect`,{method:'POST'});
+      toast(`Connected!`,'success');
+    }
+    await selectServer(name);
+  }catch(e){toast('Error: '+e.message,'error');await selectServer(name);}
+}
+
+async function deleteServer(){
+  if(!currentServer||!confirm(`Remove "${currentServer.name}"?`))return;
+  try{
+    await api(`/api/servers/${encodeURIComponent(currentServer.name)}`,{method:'DELETE'});
+    toast(`Removed`,'info');
+    currentServer=null;
+    document.getElementById('serverDetail').classList.remove('visible');
+    await loadServers();
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+// ── Add Server ───────────────────────────────────────────────
+function openAddModal(){
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('inpName').value='';
+  document.getElementById('inpCommand').value='';
+  document.getElementById('inpArgs').value='';
+  document.getElementById('envPairs').innerHTML='';
+  envPairs=[];
+}
+
+function preset(name,cmd,args){
+  document.getElementById('inpName').value=name;
+  document.getElementById('inpCommand').value=cmd;
+  document.getElementById('inpArgs').value=args;
+}
+
+function presetAndOpen(name,cmd,args){preset(name,cmd,args);openAddModal();}
+
+function addEnvPair(k='',v=''){
+  const idx=envPairs.length;
+  const div=document.createElement('div');div.className='env-pair';
+  div.innerHTML=`<input placeholder="KEY" value="${escapeHtml(k)}" onchange="envPairs[${idx}].key=this.value"><input placeholder="value" value="${escapeHtml(v)}" onchange="envPairs[${idx}].value=this.value"><button onclick="this.parentElement.remove();envPairs[${idx}]=null">×</button>`;
+  envPairs.push({key:k,value:v});
+  document.getElementById('envPairs').appendChild(div);
+}
+
+async function submitServer(){
+  const name=document.getElementById('inpName').value.trim();
+  const command=document.getElementById('inpCommand').value.trim();
+  if(!name||!command){toast('Name and Command required','error');return;}
+  const argsStr=document.getElementById('inpArgs').value.trim();
+  const args=argsStr?argsStr.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)?.map(a=>a.replace(/^["']|["']$/g,''))||[]:[];
+  const env={};
+  for(const p of envPairs){if(p&&p.key&&p.key.trim())env[p.key.trim()]=p.value||'';}
+  try{
+    await api('/api/servers',{method:'POST',body:JSON.stringify({name,command,args,env:Object.keys(env).length?env:undefined})});
+    toast(`"${name}" added!`,'success');
+    closeModal('addModal');
+    await loadServers();
+    await selectServer(name);
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.getElementById('addModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('addModal');});
+document.getElementById('licenseModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('licenseModal');});
+document.getElementById('toolModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('toolModal');});
+
+// ── Tool Calling ─────────────────────────────────────────────
+function openToolCall(name){
+  if(!currentServer)return;
+  const tool=currentServer.tools.find(t=>t.name===name);
+  if(!tool)return;
+  selectedTool=tool;
+  document.getElementById('toolModalTitle').textContent='🔧 '+name;
+  document.getElementById('toolModalDesc').textContent=tool.description||'Call with JSON arguments';
+  
+  // Build default args
+  const def={};
+  if(tool.inputSchema&&tool.inputSchema.properties){
+    for(const[k,v]of Object.entries(tool.inputSchema.properties)){
+      if(v.type==='string')def[k]=v.default||'';
+      else if(v.type==='number')def[k]=v.default||0;
+      else if(v.type==='boolean')def[k]=v.default||false;
+      else def[k]=v.default||null;
+    }
+  }
+  document.getElementById('toolArgs').value=JSON.stringify(def,null,2)||'{}';
+  document.getElementById('toolResult').style.display='none';
+  document.getElementById('toolModal').classList.add('open');
+}
+
+async function callTool(){
+  if(!currentServer||!selectedTool)return;
+  const btn=document.getElementById('btnCallTool');
+  btn.disabled=true;btn.textContent='⏳';
+  try{
+    const args=JSON.parse(document.getElementById('toolArgs').value);
+    const result=await api(`/api/servers/${encodeURIComponent(currentServer.name)}/call`,{
+      method:'POST',body:JSON.stringify({tool:selectedTool.name,args}),
+    });
+    document.getElementById('toolResult').style.display='block';
+    document.getElementById('toolResultContent').textContent=JSON.stringify(result.result,null,2);
+    toast('Done','success');
+  }catch(e){
+    document.getElementById('toolResult').style.display='block';
+    document.getElementById('toolResultContent').textContent='Error: '+e.message;
+    document.getElementById('toolResultContent').style.color='var(--red)';
+  }
+  btn.disabled=false;btn.textContent='▶ Run';
+}
+
+init();
+</script>
+</body>
+</html>

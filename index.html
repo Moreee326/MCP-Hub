@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Hub — The Control Panel for Your AI Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MCP Hub — Landing Page
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg: #070b15;
+  --bg-surface: #0c1225;
+  --bg-card: #111827;
+  --bg-elevated: #1a2332;
+  --border: rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.1);
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #8b5cf6;
+  --accent2: #06b6d4;
+  --accent-gradient: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  --green: #22c55e;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --max-width: 1200px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ═══ ANIMATED BACKGROUND ═══ */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.bg-glow {
+  position: fixed;
+  top: -30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(ellipse, rgba(139,92,246,0.08) 0%, transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ═══ NAV ═══ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  background: rgba(7,11,21,0.8);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.nav-logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-gradient);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+}
+
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+/* ═══ HERO ═══ */
+.hero {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 140px 24px 80px;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 32px;
+}
+
+.hero h1 {
+  font-size: clamp(40px, 8vw, 72px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+}
+
+.hero h1 .gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 4px 24px rgba(139,92,246,0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(139,92,246,0.4);
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+
+/* ═══ DASHBOARD DEMO ═══ */
+.demo-section {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px 100px;
+}
+
+.demo-wrapper {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+
+.demo-wrapper img {
+  width: 100%;
+  display: block;
+}
+
+.demo-mockup {
+  background: var(--bg-surface);
+  padding: 32px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mockup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mockup-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mockup-header-left .dot {
+  width: 28px;
+  height: 28px;
+  background: var(--accent-gradient);
+  border-radius: 6px;
+}
+
+.mockup-tabs { display: flex; gap: 16px; }
+.mockup-tabs span {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+}
+.mockup-tabs span.active { color: var(--accent2); border-bottom: 2px solid var(--accent2); }
+
+.mockup-servers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mockup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.mockup-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mockup-dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.3); }
+.mockup-dot-gray { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+
+.mockup-card-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mockup-card-tools {
+  font-size: 11px;
+  color: var(--accent2);
+  background: rgba(6,182,212,0.1);
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-left: auto;
+}
+
+.mockup-card-url {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══ FEATURES ═══ */
+.features {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 100px 24px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 18px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin-bottom: 60px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  transition: all 0.2s;
+}
+
+.feature-card:hover {
+  border-color: rgba(139,92,246,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(139,92,246,0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.feature-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ═══ PRICING ═══ */
+.pricing {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 80px 24px 100px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.pricing-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.pricing-card.featured {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(139,92,246,0.04), rgba(6,182,212,0.04));
+}
+
+.pricing-card.featured::before {
+  content: 'Most Popular';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-gradient);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 99px;
+}
+
+.pricing-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pricing-card .price {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 16px 0 4px;
+}
+
+.pricing-card .price span {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pricing-card .price-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.pricing-card ul {
+  list-style: none;
+  margin-bottom: 24px;
+}
+
+.pricing-card ul li {
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pricing-card ul li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+}
+
+.pricing-card .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ═══ CTA ═══ */
+.cta-section {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.cta-box {
+  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.08));
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius);
+  padding: 64px;
+  text-align: center;
+}
+
+.cta-box h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.cta-box p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto 28px;
+}
+
+/* ═══ FOOTER ═══ */
+footer {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+footer a { color: var(--text-secondary); text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 40px auto 0; }
+  .mockup-servers { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .cta-box { padding: 32px 24px; }
+  .hero { padding: 100px 24px 60px; }
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">MCP</div>
+    MCP Hub
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#cta" class="btn btn-primary" style="padding:8px 18px;font-size:13px">Download</a>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-badge animate-in">⚡ MCP Protocol · Open Source</div>
+  <h1 class="animate-in delay-1">
+    The Control Panel<br>
+    for <span class="gradient">Your AI Tools</span>
+  </h1>
+  <p class="animate-in delay-2">
+    A visual dashboard to add, connect, and call MCP servers — 
+    your AI agents' tools, all in one place. No config files. No terminal.
+  </p>
+  <div class="hero-actions animate-in delay-3">
+    <a href="#cta" class="btn btn-primary">↓ Download Free</a>
+    <a href="#features" class="btn btn-secondary">See Features</a>
+  </div>
+</section>
+
+<!-- ═══ DEMO ═══ -->
+<section class="demo-section">
+  <div class="demo-wrapper animate-in delay-4">
+    <div class="demo-mockup">
+      <div class="mockup-header">
+        <div class="mockup-header-left">
+          <div class="dot"></div>
+          MCP Hub
+        </div>
+        <div class="mockup-tabs">
+          <span class="active">Servers</span>
+          <span>Tools</span>
+          <span>Settings</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Connected Servers</span>
+        <span style="font-size:12px;background:var(--bg-elevated);color:var(--text-muted);padding:2px 10px;border-radius:99px">3 servers</span>
+      </div>
+      <div class="mockup-servers">
+        <div class="mockup-card">
+          <div class="mockup-card-top">
+            <div class="mockup-dot-green"></div>
+            <span class="mockup-card-name">filesystem</span>
+            <span class="mockup-card-tools">5 tools</span>
+          </div>
+          <div class="mockup-card-url">npx @modelcontextprotocol/server-filesystem</div>
+        </div>
+        <div class="mockup-card">
+          <div class="mockup-card-top">
+            <div class="mockup-dot-green"></div>
+            <span class="mockup-card-name">fetch</span>
+            <span class="mockup-card-tools">1 tool</span>
+          </div>
+          <div class="mockup-card-url">uvx mcp-server-fetch</div>
+        </div>
+        <div class="mockup-card">
+          <div class="mockup-card-top">
+            <div class="mockup-dot-gray"></div>
+            <span class="mockup-card-name">github</span>
+            <span class="mockup-card-tools">—</span>
+          </div>
+          <div class="mockup-card-url">Disconnected · click to connect</div>
+        </div>
+        <div class="mockup-card" style="border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;cursor:pointer">
+          + Add Server
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="features" id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything you need<br>to manage MCP servers</h2>
+  <p class="section-sub">Add, connect, inspect, and call any MCP server from a beautiful dashboard — no terminal fu required.</p>
+  
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🖥️</div>
+      <h3>Visual Dashboard</h3>
+      <p>See all your MCP servers at a glance. Status indicators, tool counts, and one-click connect — no config files to edit.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔌</div>
+      <h3>One-Click Connect</h3>
+      <p>Connect to any stdio-based MCP server with a single click. Auto-discovers all tools available on the server.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧰</div>
+      <h3>Inline Tool Calling</h3>
+      <p>Call any MCP tool directly from the dashboard. Fill in arguments via JSON editor, see results instantly — perfect for debugging.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💾</div>
+      <h3>Persistent Config</h3>
+      <p>Server configurations survive restarts. Add once, use forever. Your MCP servers are always ready when you need them.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Secure by Design</h3>
+      <p>Environment variables for API keys are isolated per server. No credential leakage between MCP processes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌙</div>
+      <h3>Dark Mode</h3>
+      <p>Easy on the eyes during late-night coding sessions. Beautiful dark theme with responsive mobile layout.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section class="pricing" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Start free, upgrade<br>when you need more</h2>
+  <p class="section-sub">No credit card required. All features work locally — your data never leaves your machine.</p>
+
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <h3>Free</h3>
+      <div class="price">$0</div>
+      <div class="price-sub">Forever free · No credit card</div>
+      <ul>
+        <li>Up to 2 MCP servers</li>
+        <li>Full dashboard UI</li>
+        <li>Tool calling & inspection</li>
+        <li>Persistent configs</li>
+        <li>Community support</li>
+      </ul>
+      <a href="#cta" class="btn btn-secondary">Download Free</a>
+    </div>
+
+    <div class="pricing-card featured">
+      <h3>Pro</h3>
+      <div class="price">$19</div>
+      <div class="price-sub">One-time purchase · Lifetime license</div>
+      <ul>
+        <li>Unlimited MCP servers</li>
+        <li>Everything in Free</li>
+        <li>Encrypted env variables</li>
+        <li>Server export/import</li>
+        <li>Priority support</li>
+        <li>12 months of updates</li>
+      </ul>
+      <a href="#cta" class="btn btn-primary">Buy Pro — $19</a>
+    </div>
+
+    <div class="pricing-card">
+      <h3>Team</h3>
+      <div class="price">—</div>
+      <div class="price-sub">Coming soon</div>
+      <ul>
+        <li>Shared server configs</li>
+        <li>Team workspaces</li>
+        <li>Audit logs</li>
+        <li>SSO</li>
+      </ul>
+      <a href="#cta" class="btn btn-secondary">Coming Soon</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta-section" id="cta">
+  <div class="cta-box">
+    <h2>Ready to take control of your AI tools?</h2>
+    <p>Download MCP Hub free. No sign-up required. Works on macOS, Linux, and Windows.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="downloadApp()">↓ Download for Windows</button>
+      <button class="btn btn-secondary" onclick="window.location.href='https://github.com/Moreee326/mcp-hub'">View on GitHub</button>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--text-muted)">
+      Requires Node.js 18+ · <a href="#" style="color:var(--accent2);text-decoration:none">macOS</a> · <a href="#" style="color:var(--accent2);text-decoration:none">Linux</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <span>© 2026 MCP Hub</span>
+  <div style="display:flex;gap:20px">
+    <a href="https://github.com/Moreee326/mcp-hub">GitHub</a>
+    <a href="#">Docs</a>
+    <a href="mailto:a308285598@gmail.com">Contact</a>
+  </div>
+</footer>
+
+<script>
+function downloadApp() {
+  // For now, scroll to the install instructions
+  const installSection = document.createElement('div');
+  installSection.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:center;justify-content:center';
+  installSection.onclick = () => installSection.remove();
+  
+  installSection.innerHTML = `
+    <div style="background:#111827;border:1px solid #2a3a5c;border-radius:16px;padding:32px;max-width:500px;margin:20px;animation:fadeUp 0.3s ease-out">
+      <h3 style="font-size:20px;font-weight:700;margin-bottom:8px">📦 Quick Install</h3>
+      <p style="color:#94a3b8;font-size:14px;margin-bottom:20px">Run this in your terminal:</p>
+      <pre style="background:#070b15;padding:16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;overflow-x:auto;white-space:pre-wrap">curl -fsSL https://mcp-hub.dev/install.sh | bash</pre>
+      <p style="color:#64748b;font-size:12px;margin-top:12px">Or <a href="#" style="color:#06b6d4;text-decoration:none">download the ZIP</a> directly</p>
+      <p style="color:#64748b;font-size:12px;margin-top:8px">After install: <code style="background:#070b15;padding:2px 6px;border-radius:4px;font-size:11px">npx mcp-hub</code></p>
+      <button onclick="this.closest('div[style]').parentElement.remove()" style="margin-top:20px;background:none;border:1px solid #2a3a5c;color:#e2e8f0;padding:8px 20px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px">Close</button>
+    </div>
+  `;
+  document.body.appendChild(installSection);
+}
+</script>
+
+</body>
+</html>
