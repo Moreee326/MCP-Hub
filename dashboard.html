@@ -243,6 +243,11 @@ header {
     <div class="server-list" id="serverList"></div>
     <div style="padding:8px;border-top:1px solid var(--border)">
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAddModal()">+ Add Server</button>
+      <div style="display:flex;gap:4px;margin-top:6px">
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="exportServers()" id="btnExport" title="Export server configs (Pro)">📤 Export</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="document.getElementById('importInput').click()" id="btnImport" title="Import server configs (Pro)">📥 Import</button>
+        <input type="file" id="importInput" accept=".json" style="display:none" onchange="importServers(event)">
+      </div>
     </div>
   </div>
 
@@ -457,6 +462,7 @@ async function loadLicense() {
     const badge = document.getElementById('licenseBadge');
     badge.textContent = data.tier === 'pro' ? 'PRO' : 'FREE';
     badge.className = 'license-badge ' + (data.tier === 'pro' ? 'pro' : 'free');
+    toggleExportButtons();
   } catch(e) {}
 }
 
@@ -776,6 +782,53 @@ async function submitFeedback() {
     toast('Error: ' + e.message, 'error');
   }
   btn.disabled = false; btn.textContent = 'Send Feedback';
+}
+
+// ── Export / Import ─────────────────────────────────────────────
+function toggleExportButtons() {
+  const isPro = licenseInfo.tier === 'pro';
+  document.getElementById('btnExport').disabled = !isPro;
+  document.getElementById('btnImport').disabled = !isPro;
+}
+
+async function exportServers() {
+  if (licenseInfo.tier !== 'pro') {
+    toast('Export requires Pro license. Upgrade from the 🔑 button above.', 'info');
+    return;
+  }
+  try {
+    const res = await fetch(API + '/api/servers/export');
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mcp-hub-servers.json';
+    a.click(); URL.revokeObjectURL(url);
+    toast('📤 Exported!','success');
+  } catch(e) { toast('Export error: '+e.message,'error'); }
+}
+
+async function importServers(event) {
+  if (licenseInfo.tier !== 'pro') {
+    toast('Import requires Pro license. Upgrade from the 🔑 button above.', 'info');
+    return;
+  }
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const configs = JSON.parse(text);
+    const res = await fetch(API + '/api/servers/import', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ configs, overwrite: false }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error, 'error'); return; }
+    toast(data.message || 'Imported!', 'success');
+    await loadServers();
+  } catch(e) { toast('Import error: '+e.message, 'error'); }
+  event.target.value = '';
 }
 
 init();

@@ -362,6 +362,46 @@ app.delete('/api/servers/:name', (req, res) => {
   res.json(removeServer(name));
 });
 
+// Export server configs (Pro feature)
+app.get('/api/servers/export', (req, res) => {
+  const license = getLicense();
+  if (license.tier !== 'pro') {
+    return res.status(403).json({ error: 'Export requires Pro license. Upgrade to Pro for $19.' });
+  }
+  const configs = {};
+  for (const [name, s] of Object.entries(servers)) {
+    configs[name] = s.config;
+  }
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', `attachment; filename="mcp-hub-servers-${new Date().toISOString().slice(0,10)}.json"`);
+  res.json(configs);
+});
+
+// Import server configs (Pro feature)
+app.post('/api/servers/import', (req, res) => {
+  const license = getLicense();
+  if (license.tier !== 'pro') {
+    return res.status(403).json({ error: 'Import requires Pro license. Upgrade to Pro for $19.' });
+  }
+  const { configs, overwrite } = req.body;
+  if (!configs || typeof configs !== 'object') {
+    return res.status(400).json({ error: 'Invalid config data. Expected { "name": { command, args, env } }' });
+  }
+  let added = 0, skipped = 0;
+  for (const [name, config] of Object.entries(configs)) {
+    if (!config.command) continue;
+    if (servers[name] && !overwrite) { skipped++; continue; }
+    if (!servers[name]) {
+      servers[name] = { config: { command: config.command, args: config.args || [], env: config.env || {}, timeout: config.timeout || 120 }, status: 'stopped', tools: [], proc: null, buffer: '', lastError: null, stderrbuf: null };
+    } else {
+      Object.assign(servers[name].config, config);
+    }
+    added++;
+  }
+  saveConfig();
+  res.json({ added, skipped, message: `Imported ${added} server(s)${skipped ? `, ${skipped} skipped (already exist)` : ''}` });
+});
+
 // Connect to a server
 app.post('/api/servers/:name/connect', async (req, res) => {
   const { name } = req.params;
