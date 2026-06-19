@@ -539,6 +539,43 @@ app.post('/api/feedback', (req, res) => {
   res.json({ status: 'received', message: 'Thanks for your feedback! 🎉' });
 });
 
+// ── Update Check ────────────────────────────────────────────────────
+const PKG = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+const CURRENT_VERSION = PKG.version;
+
+// Check GitHub for newer release
+app.get('/api/update/check', async (req, res) => {
+  try {
+    const resp = await fetch('https://api.github.com/repos/Moreee326/MCP-Hub/releases/latest', {
+      headers: { 'Accept': 'application/vnd.github+json', 'User-Agent': 'mcp-hub' },
+    });
+    if (!resp.ok) throw new Error(`GitHub API: ${resp.status}`);
+    const release = await resp.json();
+    const latest = (release.tag_name || '').replace(/^v/, '');
+    const hasUpdate = compareVersions(latest, CURRENT_VERSION) > 0;
+    res.json({
+      currentVersion: CURRENT_VERSION,
+      latestVersion: latest || CURRENT_VERSION,
+      hasUpdate,
+      downloadUrl: release.html_url || 'https://github.com/Moreee326/MCP-Hub/releases',
+      releaseNotes: release.body?.substring(0, 500) || null,
+    });
+  } catch (e) {
+    // Offline or API error — return current version with no update
+    res.json({ currentVersion: CURRENT_VERSION, latestVersion: CURRENT_VERSION, hasUpdate: false, error: e.message });
+  }
+});
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i]||0) > (pb[i]||0)) return 1;
+    if ((pa[i]||0) < (pb[i]||0)) return -1;
+  }
+  return 0;
+}
+
 // ── Startup ─────────────────────────────────────────────────────────
 async function startup() {
   const configs = loadConfig();

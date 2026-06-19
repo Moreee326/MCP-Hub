@@ -230,6 +230,7 @@ header {
   <div style="display:flex;gap:8px;align-items:center">
     <span id="connectionDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.4)"></span>
     <span class="license-badge free" id="licenseBadge">FREE</span>
+    <span class="license-badge free" id="versionBadge" style="font-size:10px;cursor:pointer" onclick="checkUpdate()" title="Check for updates">v1.0.0</span>
     <button class="btn btn-secondary btn-sm" onclick="location.reload()">↻</button>
   </div>
 </header>
@@ -914,6 +915,37 @@ async function addFromMarket(name) {
 }
 
 init();
+
+// ── Update Check ──────────────────────────────────────────────
+const versionBadge = document.getElementById('versionBadge');
+
+async function checkUpdate() {
+  versionBadge.textContent = '⏳';
+  versionBadge.style.cursor = 'default';
+  try {
+    const data = await api('/api/update/check');
+    versionBadge.textContent = 'v' + data.currentVersion;
+    if (data.hasUpdate) {
+      toast(`✨ v${data.latestVersion} available!`, 'info');
+      setTimeout(() => {
+        if (confirm(`Update v${data.latestVersion} available!\n\nDownload from GitHub?`)) {
+          window.open(data.downloadUrl, '_blank');
+        }
+      }, 1000);
+    } else if (data.error) {
+      toast('Offline — ' + data.error, 'info');
+    } else {
+      toast('✅ Up to date (v' + data.currentVersion + ')', 'success');
+    }
+  } catch(e) {
+    versionBadge.textContent = 'v1.0.0';
+    toast('Update check failed', 'error');
+  }
+  versionBadge.style.cursor = 'pointer';
+}
+
+// Auto-check on start (silent)
+setTimeout(checkUpdate, 3000);
 </script>
 </body>
 </html>
