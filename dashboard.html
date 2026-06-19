@@ -244,8 +244,9 @@ header {
     <div style="padding:8px;border-top:1px solid var(--border)">
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAddModal()">+ Add Server</button>
       <div style="display:flex;gap:4px;margin-top:6px">
-        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="exportServers()" id="btnExport" title="Export server configs (Pro)">📤 Export</button>
-        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="document.getElementById('importInput').click()" id="btnImport" title="Import server configs (Pro)">📥 Import</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="openMarketplace()" title="Discover MCP servers">🗂️ Discover</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="exportServers()" id="btnExport" title="Export (Pro)">📤</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="document.getElementById('importInput').click()" id="btnImport" title="Import (Pro)">📥</button>
         <input type="file" id="importInput" accept=".json" style="display:none" onchange="importServers(event)">
       </div>
     </div>
@@ -399,6 +400,21 @@ header {
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- Marketplace Modal -->
+<div class="modal-overlay" id="marketplaceModal">
+  <div class="modal" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2>🗂️ MCP Server Marketplace</h2>
+      <span style="font-size:11px;color:var(--text-dim)">Free · no license needed</span>
+    </div>
+    <p class="sub">Browse popular MCP servers and add them with one click.</p>
+    <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap" id="marketTags">
+      <button class="btn btn-secondary btn-sm" onclick="filterMarket('all')" data-tag="all" style="background:var(--accent-glow);border-color:var(--accent)">All</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:50vh;overflow-y:auto" id="marketGrid"></div>
+  </div>
+</div>
 
 <script>
 const API = '';
@@ -691,6 +707,7 @@ document.getElementById('addModal').addEventListener('click',e=>{if(e.target===e
 document.getElementById('licenseModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('licenseModal');});
 document.getElementById('toolModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('toolModal');});
 document.getElementById('feedbackModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('feedbackModal');});
+document.getElementById('marketplaceModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('marketplaceModal');});
 
 // ── Tool Calling ─────────────────────────────────────────────
 function openToolCall(name){
@@ -829,6 +846,71 @@ async function importServers(event) {
     await loadServers();
   } catch(e) { toast('Import error: '+e.message, 'error'); }
   event.target.value = '';
+}
+
+// ── Marketplace ────────────────────────────────────────────────
+let marketData = [];
+let marketFilter = 'all';
+
+async function openMarketplace() {
+  document.getElementById('marketplaceModal').classList.add('open');
+  try {
+    const res = await fetch(API + '/api/marketplace');
+    marketData = await res.json();
+    renderMarketplace();
+  } catch(e) { toast('Error loading marketplace','error'); }
+}
+
+function renderMarketplace() {
+  // Build tag filter buttons
+  const tags = new Set();
+  marketData.forEach(s => (s.tags||[]).forEach(t => tags.add(t)));
+  const tagBar = document.getElementById('marketTags');
+  tagBar.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="filterMarket(\'all\')" style="'+(marketFilter==='all'?'background:var(--accent-glow);border-color:var(--accent)':'')+'">All</button>';
+  [...tags].sort().forEach(t => {
+    tagBar.innerHTML += `<button class="btn btn-secondary btn-sm" onclick="filterMarket('${t}')" style="${marketFilter===t?'background:var(--accent-glow);border-color:var(--accent)':''}">${t}</button>`;
+  });
+
+  // Render cards
+  const filtered = marketFilter === 'all' ? marketData : marketData.filter(s => s.tags.includes(marketFilter));
+  const grid = document.getElementById('marketGrid');
+  grid.innerHTML = filtered.map(s => `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;transition:all 0.15s">
+      <div style="font-size:14px;font-weight:700;color:var(--accent2);font-family:monospace;margin-bottom:4px">${s.name}</div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:8px">${s.desc}</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">
+        <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:2px">${s.cmd}</code>
+        ${(s.args||[]).slice(0,2).map(a => `<code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:2px;margin-left:2px">${a.length>25?a.substring(0,25)+'...':a}</code>`).join('')}
+      </div>
+      ${s.envHint ? `<div style="font-size:10px;color:var(--yellow);margin-bottom:6px">⚡ needs: ${s.envHint.join(', ')}</div>` : ''}
+      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px">
+        ${(s.tags||[]).map(t => `<span style="font-size:9px;background:rgba(139,92,246,0.1);color:var(--accent);padding:1px 6px;border-radius:99px">${t}</span>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center" onclick="addFromMarket('${s.name}')">+ Add</button>
+    </div>
+  `).join('');
+}
+
+function filterMarket(tag) {
+  marketFilter = tag;
+  renderMarketplace();
+}
+
+async function addFromMarket(name) {
+  const s = marketData.find(x => x.name === name);
+  if (!s) return;
+  try {
+    const env = {};
+    if (s.envHint) s.envHint.forEach(k => env[k] = '');
+    await api('/api/servers', {
+      method: 'POST',
+      body: JSON.stringify({ name: s.name, command: s.cmd, args: s.args, env: s.envHint ? env : undefined }),
+    });
+    toast(`"${s.name}" added!`, 'success');
+    await loadServers();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  }
 }
 
 init();

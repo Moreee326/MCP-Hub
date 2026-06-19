@@ -402,6 +402,39 @@ app.post('/api/servers/import', (req, res) => {
   res.json({ added, skipped, message: `Imported ${added} server(s)${skipped ? `, ${skipped} skipped (already exist)` : ''}` });
 });
 
+// ── MCP Marketplace ──────────────────────────────────────────────────
+const MARKETPLACE = [
+  { name:'fetch', desc:'Fetch web pages and APIs — great for getting content from URLs',
+    cmd:'uvx', args:['mcp-server-fetch'], env:{}, tags:['web','data'] },
+  { name:'filesystem', desc:'Read, write, and search files on your local machine',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-filesystem','.'], env:{}, tags:['file','local'] },
+  { name:'github', desc:'Interact with GitHub: repos, issues, PRs, search code',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-github'], env:{GITHUB_TOKEN:'your_github_token'}, tags:['dev','git'] },
+  { name:'brave-search', desc:'Search the web using Brave Search API (free tier available)',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-brave-search'], env:{BRAVE_API_KEY:'your_brave_api_key'}, tags:['web','search'] },
+  { name:'playwright', desc:'Browser automation — navigate, click, extract, screenshot',
+    cmd:'npx', args:['-y','@playwright/mcp'], env:{}, tags:['browser','automation'] },
+  { name:'sqlite', desc:'Query and manage SQLite databases directly',
+    cmd:'uvx', args:['mcp-server-sqlite','--db','/path/to/database.db'], env:{}, tags:['data','database'] },
+  { name:'memory', desc:'Persistent memory store — save and recall information across sessions',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-memory'], env:{}, tags:['ai','storage'] },
+  { name:'time', desc:'Get current time, date, and timezone info',
+    cmd:'uvx', args:['mcp-server-time'], env:{}, tags:['utility'] },
+  { name:'slack', desc:'Read messages, search channels, and send Slack notifications',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-slack'], env:{SLACK_BOT_TOKEN:'xoxb-xxx',SLACK_TEAM_ID:'T00000000'}, tags:['communication'] },
+  { name:'puppeteer', desc:'Headless Chrome automation — screenshots, PDFs, scraping',
+    cmd:'npx', args:['-y','@modelcontextprotocol/server-puppeteer'], env:{}, tags:['browser','automation'] },
+];
+
+app.get('/api/marketplace', (req, res) => {
+  const list = MARKETPLACE.map(s => ({
+    name: s.name, desc: s.desc, cmd: s.cmd, args: s.args,
+    envHint: Object.keys(s.env).length ? Object.keys(s.env) : null,
+    tags: s.tags,
+  }));
+  res.json(list);
+});
+
 // Connect to a server
 app.post('/api/servers/:name/connect', async (req, res) => {
   const { name } = req.params;
