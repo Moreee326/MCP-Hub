@@ -231,6 +231,7 @@ header {
     <span id="connectionDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.4)"></span>
     <span class="license-badge free" id="licenseBadge">FREE</span>
     <span class="license-badge free" id="versionBadge" style="font-size:10px;cursor:pointer" onclick="checkUpdate()" title="Check for updates">v1.0.0</span>
+    <a href="https://ko-fi.com/moreee326" class="btn btn-secondary btn-sm" target="_blank" style="text-decoration:none" title="Support MCP Hub on Ko-fi">☕</a>
     <button class="btn btn-secondary btn-sm" onclick="location.reload()">↻</button>
   </div>
 </header>
@@ -266,10 +267,6 @@ header {
     </div>
 
     <div class="server-detail" id="serverDetail">
-      <div class="upgrade-banner" id="upgradeBanner">
-        <span>⚠️ Free plan: 2 server limit. Get Pro for $19 (one-time, lifetime license).</span>
-        <button class="btn btn-primary btn-sm" onclick="showLicenseModal()">Upgrade →</button>
-      </div>
       <div class="detail-header">
         <span class="status-dot" id="detailDot"></span>
         <span class="detail-name" id="detailName">-</span>
@@ -321,27 +318,26 @@ header {
   </div>
 </div>
 
-<!-- License Modal -->
+<!-- Support Modal -->
 <div class="modal-overlay" id="licenseModal">
   <div class="modal">
-    <h2>🔑 Activate Pro</h2>
-    <p class="sub">Enter your license key to unlock unlimited MCP servers and Pro features.</p>
+    <h2>💜 Support MCP Hub</h2>
+    <p class="sub">Everything in MCP Hub is free. If you find it useful, consider supporting development.</p>
+    <div style="background:#0d1320;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;text-align:center">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">☕ Buy me a coffee</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px">
+        Supporters get a 💜 badge and my gratitude.<br>
+        One-time, no subscription.
+      </div>
+      <a href="https://ko-fi.com/moreee326" class="btn btn-primary btn-sm" style="display:inline-flex" target="_blank">☕ Support on Ko-fi</a>
+    </div>
     <div class="form-group">
-      <label>License Key</label>
+      <label>Already a supporter? Enter your key</label>
       <input id="inpLicense" placeholder="MCPHUB-PRO-XXXX-XXXX" style="font-family:monospace;text-transform:uppercase">
     </div>
-    <div style="background:#0d1320;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">💡 Don't have a key?</div>
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
-        Get Pro for a <strong>one-time payment of $19</strong>.<br>
-        Unlimited servers, encrypted env vars, priority support,<br>
-        12 months of updates.
-      </div>
-      <a href="https://gumroad.com/l/mcp-hub" class="btn btn-primary btn-sm" style="display:inline-flex;margin-top:10px">Purchase →</a>
-    </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('licenseModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="activateLicense()">Activate</button>
+      <button class="btn btn-secondary" onclick="closeModal('licenseModal')">Close</button>
+      <button class="btn btn-primary" onclick="activateLicense()">Activate Badge</button>
     </div>
   </div>
 </div>
@@ -455,12 +451,6 @@ async function loadServersSilent() {
     renderSidebar(list);
     document.getElementById('serverCount').textContent = list.length;
     document.getElementById('emptyState').style.display = list.length===0 ? 'flex' : 'none';
-    const banner = document.getElementById('upgradeBanner');
-    if (licenseInfo.tier !== 'pro' && list.length >= 2) {
-      banner.style.display = 'flex';
-    } else {
-      banner.style.display = 'none';
-    }
     if (currentServer) {
       const up = list.find(s=>s.name===currentServer.name);
       if (up) renderDetail(up);
@@ -477,9 +467,8 @@ async function loadLicense() {
     const data = await res.json();
     licenseInfo = data;
     const badge = document.getElementById('licenseBadge');
-    badge.textContent = data.tier === 'pro' ? 'PRO' : 'FREE';
-    badge.className = 'license-badge ' + (data.tier === 'pro' ? 'pro' : 'free');
-    toggleExportButtons();
+    badge.textContent = (data.tier === 'supporter' || data.tier === 'pro') ? 'SUPPORTER 💜' : 'FREE';
+    badge.className = 'license-badge ' + (data.tier === 'supporter' || data.tier === 'pro' ? 'pro' : 'free');
   } catch(e) {}
 }
 
@@ -495,7 +484,7 @@ async function activateLicense() {
     });
     const data = await res.json();
     if (data.error) { toast(data.error, 'error'); return; }
-    toast('Pro activated! 🎉', 'success');
+    toast(data.message || 'Badge activated! 💜', 'success');
     closeModal('licenseModal');
     await loadLicense();
     await loadServers();
@@ -530,14 +519,7 @@ async function loadServers() {
     document.getElementById('serverCount').textContent = list.length;
     document.getElementById('emptyState').style.display = list.length===0 ? 'flex' : 'none';
     
-    // Check if need upgrade banner
-    const banner = document.getElementById('upgradeBanner');
-    if (licenseInfo.tier !== 'pro' && list.length >= 2) {
-      banner.style.display = 'flex';
-    } else {
-      banner.style.display = 'none';
-    }
-    
+    document.getElementById('emptyState').style.display = list.length===0 ? 'flex' : 'none';
     if (currentServer) {
       const up = list.find(s=>s.name===currentServer.name);
       if (up) renderDetail(up);
@@ -803,17 +785,8 @@ async function submitFeedback() {
 }
 
 // ── Export / Import ─────────────────────────────────────────────
-function toggleExportButtons() {
-  const isPro = licenseInfo.tier === 'pro';
-  document.getElementById('btnExport').disabled = !isPro;
-  document.getElementById('btnImport').disabled = !isPro;
-}
 
 async function exportServers() {
-  if (licenseInfo.tier !== 'pro') {
-    toast('Export requires Pro license. Upgrade from the 🔑 button above.', 'info');
-    return;
-  }
   try {
     const res = await fetch(API + '/api/servers/export');
     if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
@@ -827,10 +800,6 @@ async function exportServers() {
 }
 
 async function importServers(event) {
-  if (licenseInfo.tier !== 'pro') {
-    toast('Import requires Pro license. Upgrade from the 🔑 button above.', 'info');
-    return;
-  }
   const file = event.target.files[0];
   if (!file) return;
   try {

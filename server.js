@@ -53,20 +53,7 @@ function saveLicense(key) {
 
 function getLicense() { return loadLicense(); }
 
-function checkServerLimit(req, res, next) {
-  const license = getLicense();
-  if (license.tier === 'pro') return next();
-  
-  // Free tier: max 2 servers total
-  const serverCount = Object.keys(servers).length;
-  if (serverCount >= 2 && req.method === 'POST' && req.path === '/api/servers' && !req.params.name) {
-    return res.status(403).json({ 
-      error: 'Free plan limited to 2 servers. Upgrade to Pro for unlimited.',
-      upgradeUrl: '/app#upgrade'
-    });
-  }
-  next();
-}
+function checkServerLimit(req, res, next) { next(); }
 
 // ── Middleware ──────────────────────────────────────────────────────
 app.use(cors());
@@ -290,7 +277,7 @@ app.post('/api/license/activate', async (req, res) => {
   
   saveLicense(key);
   const source = result.source === 'gumroad' ? ' (verified via Gumroad)' : '';
-  res.json({ tier: 'pro', message: `Pro activated!${source}` });
+  res.json({ tier: 'supporter', message: `Supporter badge activated!💜${source}` });
 });
 
 // ── REST API ────────────────────────────────────────────────────────
@@ -308,18 +295,8 @@ app.get('/api/servers', (req, res) => {
   res.json(list);
 });
 
-// Add a server (with license limit check)
+// Add a server
 app.post('/api/servers', (req, res) => {
-  const license = getLicense();
-  if (license.tier !== 'pro') {
-    const serverCount = Object.keys(servers).length;
-    if (serverCount >= 2) {
-      return res.status(403).json({ 
-        error: 'Free plan limited to 2 servers. Upgrade to Pro for unlimited.',
-        upgradeUrl: '/app#upgrade'
-      });
-    }
-  }
   const { name, command, args, env, timeout } = req.body;
   if (!name || !command) {
     return res.status(400).json({ error: 'name and command are required' });
@@ -362,12 +339,8 @@ app.delete('/api/servers/:name', (req, res) => {
   res.json(removeServer(name));
 });
 
-// Export server configs (Pro feature)
+// Export server configs
 app.get('/api/servers/export', (req, res) => {
-  const license = getLicense();
-  if (license.tier !== 'pro') {
-    return res.status(403).json({ error: 'Export requires Pro license. Upgrade to Pro for $19.' });
-  }
   const configs = {};
   for (const [name, s] of Object.entries(servers)) {
     configs[name] = s.config;
@@ -377,12 +350,8 @@ app.get('/api/servers/export', (req, res) => {
   res.json(configs);
 });
 
-// Import server configs (Pro feature)
+// Import server configs
 app.post('/api/servers/import', (req, res) => {
-  const license = getLicense();
-  if (license.tier !== 'pro') {
-    return res.status(403).json({ error: 'Import requires Pro license. Upgrade to Pro for $19.' });
-  }
   const { configs, overwrite } = req.body;
   if (!configs || typeof configs !== 'object') {
     return res.status(400).json({ error: 'Invalid config data. Expected { "name": { command, args, env } }' });
