@@ -457,6 +457,14 @@ app.post('/api/servers/:name/call', async (req, res) => {
       arguments: args || {},
     });
     res.json({ result });
+  
+  // Save to call history
+  const entry = { id: Date.now(), server: name, tool, args: args || {}, timestamp: new Date().toISOString() };
+  if (result?.content) entry.resultLength = result.content.length;
+  if (result?.isError) entry.error = true;
+  toolHistory.unshift(entry);
+  if (toolHistory.length > 100) toolHistory.length = 100;
+  
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -467,6 +475,18 @@ app.get('/api/servers/:name/logs', (req, res) => {
   const { name } = req.params;
   if (!servers[name]) return res.status(404).json({ error: 'Not found' });
   res.json({ stderr: servers[name].stderrbuf || '' });
+});
+
+// Tool call history
+app.get('/api/tool-history', (req, res) => {
+  const server = req.query.server;
+  const data = server ? toolHistory.filter(h => h.server === server) : toolHistory;
+  res.json(data.slice(0, 50));
+});
+
+app.delete('/api/tool-history', (req, res) => {
+  toolHistory = [];
+  res.json({ cleared: true });
 });
 
 // ── Feedback API ─────────────────────────────────────────────────────
@@ -507,6 +527,8 @@ app.post('/api/feedback', (req, res) => {
   console.log(`[Feedback] ${feedbackType}: ${message.trim().substring(0, 80)}`);
   res.json({ status: 'received', message: 'Thanks for your feedback! 🎉' });
 });
+
+let toolHistory = [];
 
 // ── Update Check ────────────────────────────────────────────────────
 const PKG = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));

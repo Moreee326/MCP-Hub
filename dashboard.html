@@ -249,6 +249,7 @@ header {
         <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="openMarketplace()" title="Discover MCP servers">🗂️ Discover</button>
         <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="exportServers()" id="btnExport" title="Export (Pro)">📤</button>
         <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="document.getElementById('importInput').click()" id="btnImport" title="Import (Pro)">📥</button>
+        <button class="btn btn-secondary btn-sm" style="flex:0 0 30px;justify-content:center" onclick="openHistory()" title="Tool call history">📋</button>
         <input type="file" id="importInput" accept=".json" style="display:none" onchange="importServers(event)">
       </div>
     </div>
@@ -273,6 +274,7 @@ header {
         <span class="detail-status" id="detailStatus">-</span>
         <div class="detail-actions">
           <button class="btn btn-primary btn-sm" id="btnConnect" onclick="toggleConnect()">▶</button>
+          <button class="btn btn-secondary btn-sm" onclick="openLogs()" id="btnLogs" title="View server logs">📡</button>
           <button class="btn btn-danger btn-sm" onclick="deleteServer()">✕</button>
         </div>
       </div>
@@ -410,6 +412,29 @@ header {
       <button class="btn btn-secondary btn-sm" onclick="filterMarket('all')" data-tag="all" style="background:var(--accent-glow);border-color:var(--accent)">All</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:50vh;overflow-y:auto" id="marketGrid"></div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal" style="max-width:600px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2>📋 Tool Call History</h2>
+      <button class="btn btn-secondary btn-sm" onclick="clearHistory()" title="Clear history">🗑️ Clear</button>
+    </div>
+    <p class="sub">Last 50 tool calls. Click an entry to see details.</p>
+    <div id="historyList" style="max-height:55vh;overflow-y:auto;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Log Viewer Modal -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2>📡 <span id="logServerName">-</span> Logs</h2>
+      <span style="font-size:11px;color:var(--text-dim)">Auto-refreshing</span>
+    </div>
+    <pre id="logContent" style="background:#0a0a0a;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;line-height:1.6;max-height:55vh;overflow:auto;margin:0;color:var(--text);white-space:pre-wrap;word-break:break-all"></pre>
   </div>
 </div>
 
@@ -691,6 +716,8 @@ document.getElementById('licenseModal').addEventListener('click',e=>{if(e.target
 document.getElementById('toolModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('toolModal');});
 document.getElementById('feedbackModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('feedbackModal');});
 document.getElementById('marketplaceModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('marketplaceModal');});
+document.getElementById('historyModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal('historyModal');});
+document.getElementById('logModal').addEventListener('click',e=>{if(e.target===e.currentTarget){if(logTimer){clearInterval(logTimer);logTimer=null}closeModal('logModal');}});
 
 // ── Tool Calling ─────────────────────────────────────────────
 function openToolCall(name){
@@ -881,6 +908,66 @@ async function addFromMarket(name) {
   } catch(e) {
     toast('Error: '+e.message, 'error');
   }
+}
+
+// ── Tool Call History ──────────────────────────────────────────
+async function openHistory() {
+  document.getElementById('historyModal').classList.add('open');
+  try {
+    const list = await api('/api/tool-history');
+    const el = document.getElementById('historyList');
+    if (!list.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">No tool calls yet. Connect a server and call a tool.</div>';
+      return;
+    }
+    el.innerHTML = list.map(h => `
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:6px;cursor:pointer" onclick="showHistoryDetail(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--accent2)">${h.tool}</div>
+          <div style="font-size:10px;color:var(--text-dim)">${new Date(h.timestamp).toLocaleTimeString()}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">
+          ${h.server} · ${h.error ? '❌ error' : `✅ ${h.resultLength || 0}b`}
+        </div>
+        <div style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;font-size:11px" class="history-detail">
+          <div style="margin-bottom:4px"><strong>Args:</strong> <code style="color:var(--green)">${JSON.stringify(h.args,null,2)}</code></div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { toast('Failed to load history','error'); }
+}
+
+function showHistoryDetail(el) {
+  const detail = el.querySelector('.history-detail');
+  detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+}
+
+async function clearHistory() {
+  await fetch(API + '/api/tool-history', { method: 'DELETE' });
+  toast('History cleared','info');
+  openHistory();
+}
+
+// ── Log Viewer ─────────────────────────────────────────────────
+let logTimer = null;
+
+async function openLogs() {
+  if (!currentServer) return;
+  document.getElementById('logServerName').textContent = currentServer.name;
+  document.getElementById('logModal').classList.add('open');
+  await refreshLogs();
+  if (logTimer) clearInterval(logTimer);
+  logTimer = setInterval(refreshLogs, 2000);
+}
+
+async function refreshLogs() {
+  if (!currentServer) return;
+  const name = currentServer.name;
+  try {
+    const res = await fetch(API + '/api/servers/' + encodeURIComponent(name) + '/logs');
+    const data = await res.json();
+    document.getElementById('logContent').textContent = data.stderr || '(no output yet)';
+  } catch(e) {}
 }
 
 init();
