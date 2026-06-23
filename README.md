@@ -4,29 +4,18 @@
 
 A visual dashboard to add, connect, and call MCP (Model Context Protocol) servers — your AI agents' tools, all in one place. No config files. No terminal.
 
+**[🌐 Live Demo](https://moreee326.github.io/MCP-Hub/)** · **[☕ Support on Ko-fi](https://ko-fi.com/moreee326)**
+
 ![Dashboard](screenshot-dashboard.png)
 
 ## Quick Start
 
 ```bash
-# 1. Download or clone
 git clone https://github.com/Moreee326/MCP-Hub.git
 cd mcp-hub
-
-# 2. Install dependencies
 npm install
-
-# 3. Start the server
 node server.js
-
-# 4. Open in browser
-# http://localhost:3456
-```
-
-Or with npx (if you have Node.js 18+):
-
-```bash
-npx mcp-hub
+# Open http://localhost:3456
 ```
 
 ## Features
@@ -36,21 +25,18 @@ npx mcp-hub
 | 🖥️ **Visual Dashboard** | See all MCP servers with color-coded status indicators |
 | 🔌 **One-Click Connect** | Connect to any MCP server, auto-discover tools instantly |
 | 🧰 **Inline Tool Calling** | Call any MCP tool with JSON arguments. See results in real-time |
+| 🗂️ **MCP Server Marketplace** | Browse 10+ popular MCP servers and add them with one click |
+| 📋 **Tool Call History** | Record of every tool call with params and results |
+| 📡 **Log Viewer** | Real-time stderr viewer for each connected server |
 | 💾 **Persistent Config** | Server configurations survive restarts |
-| 🔒 **Secure by Design** | Isolated environment variables per server |
+| 📤 **Export / Import** | Download and upload server configs as JSON |
+| 🔍 **One-Click Update** | Auto-check for new versions on startup |
 
 ## Pricing
 
-| Plan | Price | Limits |
-|------|-------|--------|
-| **Free** | $0 | 2 servers, full dashboard |
-| **Pro** | $19 one-time | Unlimited servers, encrypted env vars, 12mo updates, priority support |
+**MCP Hub is free for everyone.** No limits, no trials.
 
-### How to buy Pro
-
-1. Purchase a license key on [Gumroad](https://gumroad.com/l/mcp-hub) ($19)
-2. After purchase, you'll receive a license key via email
-3. Open MCP Hub Dashboard → click the **FREE** badge → **Activate**
+If you find it useful, consider [buying me a coffee ☕](https://ko-fi.com/moreee326). Supporters get a 💜 badge in the dashboard — but all features are unlocked regardless.
 
 ## Requirements
 
